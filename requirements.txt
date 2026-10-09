@@ -1,0 +1,23 @@
+# Tested with Python 3.10+, PyTorch 2.7 (CUDA 12.6).
+torch>=2.1
+torchvision
+accelerate
+einops
+safetensors
+jsonmerge
+dctorch
+torchdiffeq
+torchsde
+numpy
+scipy
+scikit-image
+scikit-learn      # infer.py: optional t-SNE/clustering analysis (--bimodal-tsne)
+opencv-python     # data_gen/shape_stereo_slant.py
+pillow
+matplotlib
+tqdm
+wandb             # optional: only when WANDB_PROJECT is set
+# Optional accelerators; the model falls back to plain attention when absent:
+#   natten  (neighborhood attention)   flash-attn
+# Note: the DINO cost volume downloads dinov2 weights through torch.hub
+# (facebookresearch/dinov2) on first use, so the first run needs internet access.

@@ -1,0 +1,25 @@
+cd /Users/linbotang/Documents/Research/stereo_diffusion/stereo_diffusion
+cat > .gitignore <<'EOF'
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+venv*/
+.env
+
+# data, checkpoints, outputs
+/data/
+/logs/
+/wandb/
+/old_results*/
+/results*/
+*.pth
+*.safetensors
+*_state.json
+*_demo/
+*_evalpreds/
+*_demo_*.png
+*.csv
+!requirements.txt
+EOF
+

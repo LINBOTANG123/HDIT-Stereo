@@ -1,0 +1,82 @@
+{
+  "model": {
+    "type":           "foj_cond_transformer_v2_stereo",
+
+    "input_channels": 2,
+    "output_channels": 2,
+    "cond_channels": 6,
+    "input_size":   [128, 128],
+    "patch_size":   [2, 2],
+
+    "depths":  [2, 2, 4],
+    "widths":  [128, 256, 512],
+    "self_attns": [
+      { "type": "shifted-window", "d_head": 32, "window_size": 8 },
+      { "type": "shifted-window", "d_head": 64, "window_size": 8 },
+      { "type": "global",         "d_head": 64 }
+    ],
+
+    "mapping_cond_dim": 128,
+    "disp_norm": 64.0,
+    "udf_k": 3.0,
+    "udf_channel_weight": 1.0,
+
+    "use_scc": true,
+    "scc_dmax": 32,
+    "scc_feat_ch": 64,
+    "scc_plane": true,
+    "disp_left": true,
+
+    "loss_config":    "karras",
+    "loss_weighting": "soft-min-snr",
+    "loss_scales": 1,
+    "channel_scales": [1.0, 0.015],
+    "dropout_rate":   [0.0, 0.0, 0.1],
+    "mapping_dropout_rate": 0.0,
+    "augment_prob":   0.0,
+    "sigma_data":     1.0,
+    "sigma_min":      0.01,
+    "sigma_max":      160,
+    "sigma_sample_density": { "type": "cosine-interpolated" }
+  },
+
+  "dataset": {
+    "type":        "custom",
+    "location":    "../k_diffusion/datasets_custom_stereo.py",
+    "get_dataset": "FoJStereoDataset",
+    "config": {
+      "root": "data/stereo_128_train",
+      "left_img_path": "data/stereo_128_train/left",
+      "right_img_path": "data/stereo_128_train/right",
+      "disp_path": "data/stereo_128_train/disp_left",
+      "field_path": "data/stereo_128_train/fields_left",
+      "channels": [0, 1],
+      "size": 128,
+      "clip_max": 64.0,
+      "u_scale": 64.0
+    },
+    "val_config": {
+      "root": "data/stereo_128_test",
+      "left_img_path": "data/stereo_128_test/left",
+      "right_img_path": "data/stereo_128_test/right",
+      "disp_path": "data/stereo_128_test/disp_left",
+      "field_path": "data/stereo_128_test/fields_left",
+      "channels": [0, 1],
+      "size": 128,
+      "clip_max": 64.0,
+      "u_scale": 64.0
+    },
+    "image_key": 0
+  },
+
+  "optimizer": {
+    "type":  "adamw",
+    "lr":    5e-4,
+    "betas": [0.9, 0.95],
+    "eps":   1e-8,
+    "weight_decay": 1e-4
+  },
+
+  "lr_sched":  { "type": "constant", "warmup": 0.0 },
+  "ema_sched": { "type": "inverse",  "power": 0.6667, "max_value": 0.9999 }
+}
