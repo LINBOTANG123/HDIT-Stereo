@@ -12,13 +12,13 @@
 # Same network / data / conditioning / schedule as its diffusion counterpart; the ONLY change is
 # --deterministic: zero input at a fixed sigma, direct x0 regression (plain MSE, no noise).
 # Inference: python infer.py ... (reads the flag from the checkpoint; one forward pass, use a single seed).
-# Data: generated_boundary_area_textureback_128_{train,test}_left (left-view GT).
+# Data: data/stereo_128_{train,test} (left-view GT).
 # Overrides:  END_STEP (default 10000000)  BATCH_SIZE (default 16)  RUN_NAME  EVAL_EVERY / DEMO_EVERY
 
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate hourglass
 
-cd /n/netscratch/zickler_lab/Lab/linbo/stereo_diffusion
+# Run from the repository root (sbatch scripts/<this script>).
 mkdir -p logs
 
 python train_udf.py \

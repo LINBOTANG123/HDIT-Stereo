@@ -55,8 +55,8 @@ GT: the amodal mask directly, no SEG
 
 USAGE
     python shape_recovery_eval.py \\
-        --gt-dir generated_boundary_area_textureback_128_test_left \\
-        --pred-dir "lcc_dino=stereo_diffusion/results_boundary_area_textureback_128_left/stereo_diffusion_lcc_dino_dispudf_128_left_backtexture_01000000" \\
+        --gt-dir data/stereo_128_test \\
+        --pred-dir "lcc_dino=results/hdit_stereo_lcc_dino_dispudf_128_left_01000000" \\
         --out-csv shape_recovery.csv
 
     Each --pred-dir is one row-group ("model") in the output; label defaults
@@ -348,7 +348,7 @@ def pred_disp_file(pred_dir: Path, stem: str, seed: str) -> Path | None:
 def _resolve_pred_base(pred_dir: Path, stems: list[str]) -> Path:
     """Some results layouts put an extra split-name level between the model
     dir and the per-scene dirs, e.g. <pred_dir>/regular/two_object_0/... (seen
-    in results_boundary_area_textureback_128_left) instead of
+    in results/<run>) instead of
     <pred_dir>/two_object_0/... (seen in results_ablation_regular100). Probe
     a handful of stems directly under pred_dir first; if none are there, look
     one level down and descend into it iff exactly one subdirectory contains

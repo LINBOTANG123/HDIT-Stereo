@@ -1,5 +1,3 @@
-cd /Users/linbotang/Documents/Research/stereo_diffusion/stereo_diffusion
-cat > .gitignore <<'EOF'
 __pycache__/
 *.pyc
 *.egg-info/
@@ -21,5 +19,4 @@ venv*/
 *_demo_*.png
 *.csv
 !requirements.txt
-EOF
 

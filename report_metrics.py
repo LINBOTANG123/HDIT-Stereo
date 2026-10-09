@@ -3,7 +3,7 @@
 Unified stereo metrics reporter.
 
 Replaces (and merges) two older scripts:
-  * stereo_diffusion/aggregate_metrics.py  — per-seed mean/median/best-K aggregation
+  * aggregate_metrics.py  — per-seed mean/median/best-K aggregation
   * baselines/summarize_metrics.py          — per-metric Mean/Std/Min/Max spread
 
 It works on BOTH csv formats automatically:
@@ -26,7 +26,7 @@ shape      Compute a shape/contour-fidelity metric (Chamfer + Hausdorff, in
 Examples
 --------
   # aggregate / compare any mix of our + baseline csvs
-  python report_metrics.py csv stereo_diffusion/results_ablation_regular100/*/ \\
+  python report_metrics.py csv results_ablation_regular100/*/ \\
                                baselines/FoundationStereo/3obj_test_results_fs \\
                                --best-k 1 3 --out-csv agg.csv
 
@@ -38,7 +38,7 @@ Examples
 
   # our multi-seed run, score the median map only
   python report_metrics.py boundary \\
-        --pred-dir stereo_diffusion/results_3_object \\
+        --pred-dir results_3_object \\
         --gt-dir   generated_test_100/disp --use-median
 
   # shape/contour fidelity: predicted disp folder vs GT disp folder

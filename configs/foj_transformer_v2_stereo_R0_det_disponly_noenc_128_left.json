@@ -62,10 +62,10 @@
     "location": "../k_diffusion/datasets_custom_stereo.py",
     "get_dataset": "FoJStereoDataset",
     "config": {
-      "root": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_train_left",
-      "left_img_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_train_left/left",
-      "right_img_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_train_left/right",
-      "disp_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_train_left/disp_left",
+      "root": "data/stereo_128_train",
+      "left_img_path": "data/stereo_128_train/left",
+      "right_img_path": "data/stereo_128_train/right",
+      "disp_path": "data/stereo_128_train/disp_left",
       "channels": [
         1
       ],
@@ -73,10 +73,10 @@
       "clip_max": 64.0
     },
     "val_config": {
-      "root": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_test_left",
-      "left_img_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_test_left/left",
-      "right_img_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_test_left/right",
-      "disp_path": "/n/netscratch/zickler_lab/Lab/linbo/generated_boundary_area_textureback_128_test_left/disp_left",
+      "root": "data/stereo_128_test",
+      "left_img_path": "data/stereo_128_test/left",
+      "right_img_path": "data/stereo_128_test/right",
+      "disp_path": "data/stereo_128_test/disp_left",
       "channels": [
         1
       ],

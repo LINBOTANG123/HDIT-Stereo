@@ -9,7 +9,7 @@
 #SBATCH --error=logs/D2_dispudf_noenc_%j.err
 
 # D2: diffusion, UDF+disparity (2ch), NO semantic encoder (no LCC, no DINO).
-# Data: generated_boundary_area_textureback_128_{train,test}_left (left-view GT).
+# Data: data/stereo_128_{train,test} (left-view GT).
 # gpu_test only gives MIG-sliced A100s, so this runs single-process (no NCCL / multi-GPU).
 # Overrides:  END_STEP (default 10000000)  BATCH_SIZE (default 16)  RUN_NAME  SAVE_EVERY / EVAL_EVERY / DEMO_EVERY
 #   e.g. smoke test:  END_STEP=200 EVAL_EVERY=100 DEMO_EVERY=100000 RUN_NAME=D2_dispudf_noenc_smoke sbatch scripts/train_D2_dispudf_noenc.sh
@@ -17,7 +17,7 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate hourglass
 
-cd /n/netscratch/zickler_lab/Lab/linbo/stereo_diffusion
+# Run from the repository root (sbatch scripts/<this script>).
 mkdir -p logs
 
 python train_udf.py \
