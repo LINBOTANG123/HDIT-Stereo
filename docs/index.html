@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>HDiT-Stereo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Do Deep Stereo Models Learn Shape Priors? HDiT-Stereo, a generative stereo model that jointly samples disparity and a boundary distance field.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 760px reading column; the two interactive panels and the figures break out to 1080px.
+   Colour comes from the paper's own maps: magma (disparity) for the accent, orange for our method. */
+:root {
+  --bg: #fbfafd;
+  --surface: #f2f0f7;
+  --fg: #1c1827;
+  --muted: #5e5872;
+  --line: #e1ddea;
+  --accent: #6b2a8f;
+  --ours: #c8541f;
+  --ours-tint: #fbebe2;
+  --lens: #19a0c8;
+  --link: #5a2380;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --magma: linear-gradient(90deg, #000004, #3b0f70, #8c2981, #de4968, #fe9f6d, #fcfdbf);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121019; --surface: #1c1926; --fg: #ece9f4; --muted: #a7a1b9; --line: #2e2a3b;
+    --accent: #c99cf0; --ours: #f2995f; --ours-tint: #33211a; --lens: #4cc6ea; --link: #d6b2f5; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121019; --surface: #1c1926; --fg: #ece9f4; --muted: #a7a1b9; --line: #2e2a3b;
+  --accent: #c99cf0; --ours: #f2995f; --ours-tint: #33211a; --lens: #4cc6ea; --link: #d6b2f5; color-scheme: dark;
+}
+
+body {
+  background: var(--bg); color: var(--fg);
+  font: 400 1rem/1.65 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.col { max-width: 1080px; margin-inline: auto; width: 100%; }
+.wide { max-width: 1080px; margin-inline: auto; width: 100%; }
+main { display: grid; gap: 72px; padding-block: 56px 96px; }
+section { display: grid; gap: 18px; min-width: 0; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.2vw, 3.35rem); line-height: 1.05; font-weight: 750; font-stretch: 85%; }
+h2 { font-size: 1.6rem; line-height: 1.2; font-weight: 700; font-stretch: 90%; }
+p { margin: 0; }
+.eyebrow { font: 500 0.78rem/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.prose { display: grid; gap: 14px; }
+.note { font-size: 0.85rem; color: var(--muted); }
+
+/* header */
+header.hero { display: grid; gap: 20px; }
+.venue { font: 500 0.8rem/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.2rem; line-height: 1.5; color: var(--muted); }
+.lede b { color: var(--fg); font-weight: 600; }
+.people { display: grid; gap: 4px; }
+.authors { display: flex; flex-wrap: wrap; gap: 6px 28px; font-size: 1.1rem; font-weight: 600; }
+.affil { color: var(--muted); font-size: 0.95rem; }
+.authors a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--line); text-decoration-thickness: 2px; }
+.authors a:hover { text-decoration-color: var(--accent); }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px;
+  font: 500 0.92rem/1 var(--font-body); text-decoration: none; border: 1px solid var(--fg);
+  color: var(--bg); background: var(--fg);
+}
+.btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* interactive panels */
+.play { background: var(--surface); border-radius: 14px; padding: clamp(16px, 3vw, 30px); display: grid; gap: 20px; }
+.img {
+  aspect-ratio: 1; max-width: 100%; border-radius: 4px; background-repeat: no-repeat;
+  image-rendering: pixelated; background-color: #000; position: relative; overflow: hidden;
+}
+.lab { font-size: 0.8rem; color: var(--muted); line-height: 1.35; }
+.lab b { color: var(--fg); font-weight: 600; }
+.cell { display: grid; gap: 6px; min-width: 0; align-content: start; }
+.sub { font: 600 0.74rem/1.2 var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); }
+.seg button {
+  font: 500 0.85rem/1 var(--font-body); padding: 8px 12px; border-radius: 7px; border: 0; cursor: pointer;
+  background: transparent; color: var(--fg);
+}
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; }
+.control { display: grid; gap: 6px; }
+
+/* teaser explorer */
+.strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; }
+.thumb {
+  aspect-ratio: 1; border: 2px solid transparent; border-radius: 6px; padding: 0; cursor: pointer;
+  background-color: var(--bg); background-repeat: no-repeat; image-rendering: pixelated; opacity: 0.7;
+}
+.thumb:hover { opacity: 1; }
+.thumb[aria-pressed="true"] { border-color: var(--accent); opacity: 1; }
+.teaser { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3.2fr); gap: 18px; align-items: start; }
+.inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.inputs .cell:first-child { grid-column: 1 / -1; }
+.methods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.methods .img, .zooms .img { cursor: crosshair; touch-action: none; }
+.err .img { background-color: #fff; }
+.cell.is-ours .lab b { color: var(--ours); }
+.score { font: 500 0.8rem/1.2 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--fg); }
+.cell.best .score::after { content: " lowest"; color: var(--ours); font-weight: 500; }
+.lens { position: absolute; border: 2px solid var(--lens); border-radius: 2px; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.6); }
+.right { display: grid; gap: 10px; min-width: 0; }
+.right .sub { margin-top: 6px; }
+.zooms { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.zooms .img { border: 2px solid var(--lens); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip {
+  font: 500 0.78rem/1 var(--font-mono); min-width: 30px; padding: 6px 7px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+}
+.chip[aria-pressed="true"] { background: var(--ours); border-color: var(--ours); color: #fff; }
+
+/* difficulty */
+.diff-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.meter { display: flex; gap: 4px; align-items: center; font: 500 0.78rem/1 var(--font-mono); color: var(--muted); }
+.meter i { width: 22px; height: 6px; border-radius: 3px; background: var(--line); }
+.meter i.on { background: var(--ours); }
+.bar { height: 6px; border-radius: 3px; background: var(--magma); }
+.bar-scale { display: flex; justify-content: space-between; font: 400 0.7rem/1 var(--font-mono); color: var(--muted); }
+
+/* figures and table */
+figure { margin: 0; display: grid; gap: 12px; }
+figure img { width: 100%; height: auto; display: block; border-radius: 6px; background: #fff; }
+figcaption { font-size: 0.9rem; line-height: 1.55; color: var(--muted); }
+figcaption b { color: var(--fg); font-weight: 600; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+thead th { font: 600 0.74rem/1.3 var(--font-body); color: var(--muted); background: var(--surface); vertical-align: bottom; }
+thead tr.group th { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.68rem; text-align: center; }
+td { font-family: var(--font-mono); font-size: 0.8rem; }
+td:first-child { font-family: var(--font-body); font-size: 0.86rem; }
+td:nth-child(2) { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+tr.ours td { background: var(--ours-tint); }
+tr.ours td:first-child { font-weight: 600; }
+td b { font-weight: 700; }
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 0.85rem; }
+
+@media (max-width: 820px) {
+  .teaser { grid-template-columns: 1fr; }
+  .inputs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .inputs .cell:first-child { grid-column: auto; }
+}
+@media (max-width: 600px) {
+  main { gap: 56px; padding-block: 36px 72px; }
+  .methods, .zooms { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .diff-grid { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<main>
+  <header class="hero col">
+    <div class="venue">NeurIPS 2026 Workshop · Physical World Models</div>
+    <h1>Do Deep Stereo Models Learn Shape Priors?</h1>
+    <p class="lede">State-of-the-art stereo networks still misplace the edges of simple polygons, even after training on them. <b>HDiT-Stereo</b> samples disparity together with a boundary distance field, and puts those edges where they belong.</p>
+    <div class="people">
+      <div class="authors"><a href="https://linbotang123.github.io/" target="_blank" rel="noopener">Linbo Tang</a><a href="https://github.com/aneeldamaraju" target="_blank" rel="noopener">Aneel Damaraju</a><a href="https://zickler.seas.harvard.edu/" target="_blank" rel="noopener">Todd Zickler</a></div>
+      <div class="affil">Harvard University</div>
+    </div>
+    <div class="links">
+      <a class="btn" href="https://github.com/LINBOTANG123/HDIT-Stereo" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.2 4.6 18.2 5 18.2 5c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>Code</a>
+    </div>
+  </header>
+
+  <section class="wide play" id="teaser" aria-labelledby="teaser-h">
+    <div class="prose">
+      <h2 id="teaser-h">Boundary errors, scene by scene</h2>
+      <p>Black pixels are disparity errors above 2 px. Pick one of 24 test scenes drawn at random from our 1000-scene test set; the baselines are fine-tuned on our data. Hover over any map, or drag on a touch screen, to magnify the same spot in every method.</p>
+    </div>
+    <div class="strip" id="strip" role="group" aria-label="Test scenes"></div>
+    <div class="controls">
+      <div class="control"><span class="sub">Show</span>
+        <div class="seg" role="group" aria-label="Map type">
+          <button type="button" id="view-err" aria-pressed="true">Error &gt; 2 px</button>
+          <button type="button" id="view-disp" aria-pressed="false">Disparity</button>
+        </div></div>
+      <div class="control"><span class="sub">HDiT-Stereo sample</span><div class="chips" id="chips" role="group" aria-label="HDiT-Stereo sample"></div></div>
+    </div>
+    <div class="teaser">
+      <div class="inputs">
+        <div class="cell"><div class="img" data-t="2"></div><div class="lab"><b>True disparity</b> · <span id="scene-name"></span></div></div>
+        <div class="cell"><div class="img" data-t="0"></div><div class="lab"><b>Left</b></div></div>
+        <div class="cell"><div class="img" data-t="1"></div><div class="lab"><b>Right</b></div></div>
+      </div>
+      <div class="right">
+        <div class="methods" id="methods"></div>
+        <div class="sub">Magnified 3×</div>
+        <div class="zooms" id="zooms" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="col" aria-labelledby="abstract-h">
+    <div class="eyebrow">Abstract</div>
+    <h2 id="abstract-h" hidden>Abstract</h2>
+    <p>Localizing object boundaries is important for embodied visual systems, since small boundary errors can change the inferred geometry of physical surfaces. We study whether deep stereo models produce boundaries consistent with simple shape priors when local image and disparity cues are weak. We create a synthetic stereo dataset consisting of objects drawn from a highly constrained family of shapes, with randomized depth, slant, color and texture. Despite the simplicity of this shape space, we find that several state-of-the-art stereo models retain systematic boundary errors, even when finetuned or trained from scratch on the dataset. We then introduce a simple generative stereo model that jointly predicts disparity and a distance field representing object boundaries. The model improves boundary localization and produces contours that adhere more closely to the underlying shape space. These results expose limitations in the boundary predictions of current stereo architectures when local evidence is weak, and motivate further study of whether generative models can better combine regional grouping evidence with global geometric structure.</p>
+  </section>
+
+  <section class="wide play" id="dataset" aria-labelledby="data-h">
+    <div class="prose">
+      <div class="eyebrow">Dataset</div>
+      <h2 id="data-h">Turn the difficulty up</h2>
+      <p>Every object is a planar regular polygon with up to eight sides, rendered exactly by our generator. We control how much local evidence a boundary has through three factors. Change them below; the scene geometry stays the same, so only the chosen factor changes. With the same texture and no depth gap, nothing local marks where the front object ends.</p>
+    </div>
+    <div class="controls">
+      <div class="control"><span class="sub">Appearance</span><div class="seg" id="d-app" role="group" aria-label="Appearance"></div></div>
+      <div class="control"><span class="sub">Surface slant</span><div class="seg" id="d-slant" role="group" aria-label="Surface slant"></div></div>
+      <div class="control"><span class="sub">Depth separation</span><div class="seg" id="d-gap" role="group" aria-label="Depth separation"></div></div>
+      <div class="control"><span class="sub">Scene</span><div class="seg" id="d-ex" role="group" aria-label="Example scene"></div></div>
+    </div>
+    <div class="diff-grid">
+      <div class="cell"><div class="img" id="d-left"></div><div class="lab"><b>Left</b></div></div>
+      <div class="cell"><div class="img" id="d-right"></div><div class="lab"><b>Right</b></div></div>
+      <div class="cell"><div class="img" id="d-disp"></div><div class="lab"><b>True disparity</b></div>
+        <div class="bar"></div><div class="bar-scale"><span>0</span><span id="d-dmax"></span></div></div>
+    </div>
+    <div class="meter" id="d-meter" aria-live="polite"></div>
+    <p class="note">Shown at 256 px for display; the training and test sets use 128 px.</p>
+  </section>
+
+  <section class="col" aria-labelledby="method-h">
+    <div class="eyebrow">Method</div>
+    <h2 id="method-h">HDiT-Stereo samples disparity and boundaries together</h2>
+    <div class="prose">
+      <p>We adapt the hourglass diffusion transformer (HDiT) to stereo. Starting from noise, it denoises two maps on the left-image grid: <b>disparity</b>, and an <b>unsigned distance field</b> whose zero level set marks the object boundaries. The denoiser is conditioned on per-view image features and on two left–right correlation volumes, one from a small trainable CNN and one from frozen DINOv2 features.</p>
+    </div>
+  </section>
+  <figure class="wide">
+    <img src="assets/figures/model_pipeline_2.webp" width="1800" height="645" loading="lazy" alt="Pipeline: left and right images feed a per-view encoder, a shared photometric encoder and a frozen DINOv2 semantic encoder; their features are summed and condition an HDiT denoiser that turns noisy disparity and noisy UDF into clean disparity and UDF.">
+    <figcaption>Flame and snowflake mark trainable and frozen components. The model has 23.4 M trainable parameters, close to MonSter's 23.0 M.</figcaption>
+  </figure>
+
+  <section class="col" aria-labelledby="res-h">
+    <div class="eyebrow">Results</div>
+    <h2 id="res-h">Most accurate on every boundary metric</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr class="group"><th></th><th></th><th colspan="3">Boundary &amp; contour</th><th colspan="2">Global</th></tr>
+          <tr><th>Method</th><th>Training</th><th>Bound. EPE</th><th>Chamfer</th><th>Hausd. 99</th><th>EPE</th><th>Bad-2 %</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>RAFT-Stereo</td><td>from scratch</td><td>0.792</td><td>0.345</td><td>1.37</td><td><b>0.118</b></td><td>1.71</td></tr>
+          <tr><td>Selective-IGEV</td><td>fine-tuned</td><td>0.803</td><td>0.344</td><td>1.35</td><td>0.125</td><td>1.73</td></tr>
+          <tr><td>MonSter</td><td>fine-tuned</td><td>0.795</td><td>0.355</td><td>1.44</td><td>0.130</td><td>1.74</td></tr>
+          <tr><td>DEFOM-Stereo</td><td>fine-tuned</td><td>0.831</td><td>0.365</td><td>1.59</td><td>0.144</td><td>1.83</td></tr>
+          <tr><td>FoundationStereo</td><td>zero-shot</td><td>4.086</td><td>2.614</td><td>11.98</td><td>4.261</td><td>28.70</td></tr>
+          <tr><td>HDiT-Stereo <i>Base</i></td><td>mean of 10</td><td>0.836</td><td>0.355</td><td>1.59</td><td>0.192</td><td>1.80</td></tr>
+          <tr class="ours"><td>HDiT-Stereo</td><td>mean of 10</td><td><b>0.736</b></td><td><b>0.309</b></td><td><b>1.29</b></td><td>0.147</td><td><b>1.50</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Mean over 1000 test scenes; all errors in pixels, lower is better. Each baseline is shown in its stronger training regime on our data (from scratch or fine-tuned); zero-shot versions of the four are an order of magnitude worse. <i>Base</i> is trained on disparity alone, without the boundary field or correlation encoders. Full table in the paper.</p>
+  </section>
+
+  <section class="col" aria-labelledby="bi-h">
+    <div class="eyebrow">Figure–ground ambiguity</div>
+    <h2 id="bi-h">Two valid readings, two modes</h2>
+    <div class="prose">
+      <p>When two overlapping objects share texture and depth, the images do not say which one owns the shared edge, and people often see such displays flip. Disparity is identical under both readings; only the boundaries differ.</p>
+      <p>Across 100 samples of the scene below, HDiT-Stereo's disparity stays the same while its boundary fields split into two clusters, each next to one of the two valid answers. A model that outputs one disparity map cannot represent this.</p>
+    </div>
+  </section>
+  <figure class="wide">
+    <img src="assets/figures/bimodal_4.webp" width="1800" height="782" loading="lazy" alt="Four sampled disparity maps that look the same, and four boundary fields that alternate between two contour arrangements; a t-SNE plot of 100 boundary samples shows two clusters, each near one of the two true contour maps.">
+    <figcaption><b>Left:</b> four samples. Disparity is stable; the boundary field alternates between the two valid readings. <b>Right:</b> t-SNE of 100 boundary samples, with the two true contour maps marked by stars. This does not happen in every ambiguous scene; the paper reports how often both readings appear.</figcaption>
+  </figure>
+</main>
+
+<footer class="col">Linbo Tang, Aneel Damaraju and Todd Zickler, Harvard University.</footer>
+
+<script>
+(() => {
+  // ---------- shared: draw tile t of a sprite sheet into an element ----------
+  function paint(el, sprite, t, cols, rows) {
+    const r = Math.floor(t / cols), c = t % cols;
+    el.style.backgroundImage = `url("${sprite}")`;
+    el.style.backgroundSize = `${cols * 100}% ${rows * 100}%`;
+    el.style.backgroundPosition = `${(c / (cols - 1)) * 100}% ${(r / (rows - 1)) * 100}%`;
+  }
+  function segment(container, labels, onPick, initial) {
+    const btns = labels.map((l, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = l; b.id = `${container.id}-${i}`;
+      b.setAttribute("aria-pressed", String(i === initial));
+      b.addEventListener("click", () => { btns.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i))); onPick(i); });
+      container.appendChild(b); return b;
+    });
+  }
+
+  // ---------- teaser explorer ----------
+  const METHODS = [
+    { key: "raft", name: "RAFT-Stereo", t: 4 }, { key: "igev", name: "Selective-IGEV", t: 6 },
+    { key: "monster", name: "MonSter", t: 8 }, { key: "defom", name: "DEFOM-Stereo", t: 10 },
+    { key: "ours", name: "HDiT-Stereo (ours)" },
+  ];
+  const ZOOM = 3;
+  const st = { scene: 0, view: "err", sample: "s0", cx: 0.5, cy: 0.5 };
+  let EX = null, COLS = 8, ROWS = 6;
+  const oursT = s => s === "median" ? { d: 42, e: 43 } : { d: 12 + 3 * +s.slice(1), e: 13 + 3 * +s.slice(1) };
+  const tileOf = key => key === "ours" ? (st.view === "err" ? oursT(st.sample).e : oursT(st.sample).d)
+                                        : METHODS.find(m => m.key === key).t + (st.view === "err" ? 1 : 0);
+
+  function zoomPaint(el, sprite, t) {
+    const w = el.clientWidth || 100, r = Math.floor(t / COLS), c = t % COLS, f = 1 / ZOOM;
+    const lx = Math.min(Math.max(st.cx - f / 2, 0), 1 - f), ly = Math.min(Math.max(st.cy - f / 2, 0), 1 - f);
+    el.style.backgroundImage = `url("${sprite}")`;
+    el.style.backgroundSize = `${COLS * w * ZOOM}px ${ROWS * w * ZOOM}px`;
+    el.style.backgroundPosition = `${-(c + lx) * w * ZOOM}px ${-(r + ly) * w * ZOOM}px`;
+    return { lx, ly, f };
+  }
+
+  function buildTeaser() {
+    const strip = document.getElementById("strip");
+    EX.scenes.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.className = "thumb"; b.type = "button"; b.id = `scene-${i}`;
+      b.setAttribute("aria-label", `Test scene ${s.id.replace("two_object_", "#")}`);
+      paint(b, s.sprite, 0, COLS, ROWS);
+      b.addEventListener("click", () => { st.scene = i; [st.cx, st.cy] = s.zoom || [0.5, 0.5]; renderTeaser(); });
+      strip.appendChild(b);
+    });
+    const chips = document.getElementById("chips");
+    [...Array(10).keys()].map(i => `s${i}`).concat("median").forEach(k => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.id = `chip-${k}`;
+      b.textContent = k === "median" ? "Median" : String(+k.slice(1) + 1);
+      b.addEventListener("click", () => { st.sample = k; renderTeaser(); });
+      chips.appendChild(b);
+    });
+    const mEl = document.getElementById("methods"), zEl = document.getElementById("zooms");
+    METHODS.forEach(m => {
+      const d = document.createElement("div");
+      d.className = "cell err" + (m.key === "ours" ? " is-ours" : ""); d.id = `m-${m.key}`;
+      d.innerHTML = `<div class="img"><div class="lens"></div></div><div class="lab"><b>${m.name}</b></div><div class="score"></div>`;
+      mEl.appendChild(d);
+      const z = document.createElement("div"); z.className = "cell err"; z.id = `z-${m.key}`;
+      z.innerHTML = `<div class="img"></div>`; zEl.appendChild(z);
+    });
+    const track = (e, el) => {
+      const r = el.getBoundingClientRect();
+      st.cx = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+      st.cy = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);
+      renderZoom();
+    };
+    document.querySelectorAll("#methods .img, #teaser .inputs .img").forEach(el => {
+      el.addEventListener("pointermove", e => track(e, el));
+      el.addEventListener("pointerdown", e => track(e, el));
+    });
+    const setView = v => { st.view = v; document.getElementById("view-err").setAttribute("aria-pressed", String(v === "err"));
+      document.getElementById("view-disp").setAttribute("aria-pressed", String(v === "disp")); renderTeaser(); };
+    document.getElementById("view-err").addEventListener("click", () => setView("err"));
+    document.getElementById("view-disp").addEventListener("click", () => setView("disp"));
+    addEventListener("resize", renderZoom);
+  }
+
+  function renderZoom() {
+    if (!EX) return;
+    const s = EX.scenes[st.scene];
+    METHODS.forEach(m => {
+      const { lx, ly, f } = zoomPaint(document.querySelector(`#z-${m.key} .img`), s.sprite, tileOf(m.key));
+      const lens = document.querySelector(`#m-${m.key} .lens`);
+      Object.assign(lens.style, { left: `${lx * 100}%`, top: `${ly * 100}%`, width: `${f * 100}%`, height: `${f * 100}%` });
+    });
+  }
+
+  function renderTeaser() {
+    const s = EX.scenes[st.scene];
+    document.querySelectorAll(".thumb").forEach((b, i) => b.setAttribute("aria-pressed", String(i === st.scene)));
+    document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.id === `chip-${st.sample}`)));
+    document.getElementById("scene-name").textContent = s.id.replace("two_object_", "test scene #");
+    document.querySelectorAll("#teaser [data-t]").forEach(el => paint(el, s.sprite, +el.dataset.t, COLS, ROWS));
+    const scores = METHODS.map(m => m.key === "ours" ? s.ours[st.sample].bad2 : s.base[m.key].bad2);
+    const best = Math.min(...scores);
+    METHODS.forEach((m, i) => {
+      const cell = document.getElementById(`m-${m.key}`), z = document.getElementById(`z-${m.key}`);
+      cell.classList.toggle("err", st.view === "err"); z.classList.toggle("err", st.view === "err");
+      paint(cell.querySelector(".img"), s.sprite, tileOf(m.key), COLS, ROWS);
+      cell.classList.toggle("best", scores[i] === best);
+      cell.querySelector(".score").textContent = `Bad-2 ${scores[i].toFixed(2)} %`;
+    });
+    renderZoom();
+  }
+
+  // ---------- dataset difficulty ----------
+  const ds = { app: 0, slant: 1, gap: 0, ex: 0 };
+  let DF = null;
+  function renderDiff() {
+    const e = DF.examples[ds.ex], combo = 9 * ds.app + 3 * ds.slant + ds.gap;
+    [["d-left", 0], ["d-right", 1], ["d-disp", 2]].forEach(([id, k]) => paint(document.getElementById(id), e.sprite, 3 * combo + k, DF.cols, DF.cols));
+    document.getElementById("d-dmax").textContent = `${e.dmax} px`;
+    const level = ds.app + ds.slant + ds.gap;
+    const m = document.getElementById("d-meter");
+    m.innerHTML = `<span>Difficulty</span>` + [...Array(6).keys()].map(i => `<i class="${i < level ? "on" : ""}"></i>`).join("")
+      + `<span>${level === 0 ? "easiest" : level === 6 ? "hardest: no local evidence for much of the boundary" : ""}</span>`;
+  }
+  function buildDiff() {
+    segment(document.getElementById("d-app"), DF.appearance, i => { ds.app = i; renderDiff(); }, ds.app);
+    segment(document.getElementById("d-slant"), DF.slant, i => { ds.slant = i; renderDiff(); }, ds.slant);
+    segment(document.getElementById("d-gap"), DF.gap, i => { ds.gap = i; renderDiff(); }, ds.gap);
+    segment(document.getElementById("d-ex"), DF.examples.map((_, i) => String(i + 1)), i => { ds.ex = i; renderDiff(); }, ds.ex);
+  }
+
+  const fail = (id) => { const el = document.getElementById(id); el.insertAdjacentHTML("beforeend", '<p class="note">This example could not be loaded. Reload the page to try again.</p>'); };
+  fetch("assets/explorer/scenes.json").then(r => r.json()).then(j => {
+    EX = j; COLS = j.cols; ROWS = Math.ceil(46 / j.cols); [st.cx, st.cy] = j.scenes[0].zoom || [0.5, 0.5];
+    buildTeaser(); renderTeaser();
+  }).catch(() => fail("teaser"));
+  fetch("assets/difficulty/difficulty.json").then(r => r.json()).then(j => { DF = j; buildDiff(); renderDiff(); })
+    .catch(() => fail("dataset"));
+})();
+</script>
+
+</body>
+</html>

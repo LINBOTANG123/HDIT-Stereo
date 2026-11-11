@@ -1,0 +1,33 @@
+{
+ "tile": 256,
+ "cols": 9,
+ "appearance": [
+  "Distinct color",
+  "Distinct texture",
+  "Same texture"
+ ],
+ "slant": [
+  "None",
+  "Moderate",
+  "Strong"
+ ],
+ "gap": [
+  "Large gap",
+  "Small gap",
+  "No gap"
+ ],
+ "examples": [
+  {
+   "sprite": "assets/difficulty/example_0.webp",
+   "dmax": 71.7
+  },
+  {
+   "sprite": "assets/difficulty/example_1.webp",
+   "dmax": 89.3
+  },
+  {
+   "sprite": "assets/difficulty/example_2.webp",
+   "dmax": 73.8
+  }
+ ]
+}
