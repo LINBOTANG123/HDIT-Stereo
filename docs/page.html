@@ -93,7 +93,7 @@ header.hero { display: grid; gap: 20px; }
 .control { display: grid; gap: 6px; }
 
 /* teaser explorer */
-.strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; }
+.strip { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
 .thumb {
   aspect-ratio: 1; border: 2px solid transparent; border-radius: 6px; padding: 0; cursor: pointer;
   background-color: var(--bg); background-repeat: no-repeat; image-rendering: pixelated; opacity: 0.7;
@@ -157,6 +157,7 @@ footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var
 @media (max-width: 600px) {
   main { gap: 56px; padding-block: 36px 72px; }
   .methods, .zooms { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .diff-grid { gap: 6px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -180,7 +181,7 @@ footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var
   <section class="wide play" id="teaser" aria-labelledby="teaser-h">
     <div class="prose">
       <h2 id="teaser-h">Boundary errors, scene by scene</h2>
-      <p>Black pixels are disparity errors above 2 px. Pick one of 24 test scenes drawn at random from our 1000-scene test set; the baselines are fine-tuned on our data. Hover over any map, or drag on a touch screen, to magnify the same spot in every method.</p>
+      <p>Black pixels are disparity errors above 2 px. Pick one of the 20 scenes from our 1000-scene test set where HDiT-Stereo's Bad-2 is furthest below the best baseline, ordered from the largest gap; the baselines are fine-tuned on our data. Hover over any map, or drag on a touch screen, to magnify the same spot in every method.</p>
     </div>
     <div class="strip" id="strip" role="group" aria-label="Test scenes"></div>
     <div class="controls">
